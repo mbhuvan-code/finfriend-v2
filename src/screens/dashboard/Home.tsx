@@ -1,7 +1,7 @@
 import { AlertCircle, AlertTriangle, CheckCircle2, CircleHelp, Eye, EyeOff, FileUp, Plus, Settings, ShoppingBag } from 'lucide-react'
 import { PERIODS, safeToday, type CategoryTotal, type PeriodSummary } from '../../lib/calc'
 import { categoryLabel } from '../../lib/categories'
-import { diffDays, fmtDay, fmtLongHeader, fmtRange, fmtRelative, fmtShort } from '../../lib/dates'
+import { diffDays, fmtDay, fmtLongHeader, fmtRelative, fmtShort } from '../../lib/dates'
 import { maskMoney, money } from '../../lib/money'
 import type { Txn } from '../../lib/types'
 import { useFinance, useStore } from '../../state/store'
@@ -99,7 +99,9 @@ function SpendingCard({ s, ui }: { s: PeriodSummary; ui: UI }) {
     <section className="card stack" aria-labelledby="spend-h">
       <div className="between">
         <h3 id="spend-h">Spending {noun}</h3>
-        <span className="caption">{fmtRange(s.start, s.end)}</span>
+        <span className="caption" style={{ whiteSpace: 'nowrap' }}>
+          {s.start === s.end ? fmtDay(s.start) : `${fmtShort(s.start)} - ${fmtShort(s.end)}`}
+        </span>
       </div>
       <Donut slices={slices} center={center} sensitive={s.id === 'today'} />
       <div className="legend">
@@ -280,7 +282,6 @@ export function Home({ ui }: { ui: UI }) {
             </button>
           ))}
         </div>
-        <p className="caption center">{fmtRange(summary.start, summary.end)}</p>
       </div>
 
       <SpendingCard s={summary} ui={ui} />
