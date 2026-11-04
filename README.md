@@ -2,6 +2,14 @@
 
 A mobile-first budgeting prototype for college students. It opens with onboarding and builds a dashboard only from numbers the participant enters or confirms. There is no mock financial data anywhere in the app.
 
+## Live link
+
+https://mbhuvan-code.github.io/finfriend-v2/
+
+Every push to `main` rebuilds and redeploys it through GitHub Actions (`.github/workflows/deploy.yml`). On a computer the app shows inside a phone frame. On a phone it fills the screen. Each person's data stays in their own browser.
+
+The first screenshot or recording someone reads downloads the on-device text reader (about 7 MB), so it can take 30 to 60 seconds on slow Wi-Fi. After that it's cached.
+
 ## Run it
 
 ```bash
