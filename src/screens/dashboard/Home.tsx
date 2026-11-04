@@ -305,18 +305,21 @@ export function Home({ ui }: { ui: UI }) {
             Safe to spend today
           </p>
           {plan.ok ? (
-            <Amount value={hero} className="big" />
+            // Reveal sits beside the hidden amount, so nothing below shifts when amounts are hidden.
+            <div className="hero-amount">
+              <Amount value={hero} className="big" />
+              {hidden && (
+                <button type="button" className="btn on-hero sm" onClick={() => setHidden(false)}>
+                  Reveal
+                </button>
+              )}
+            </div>
           ) : (
             <p className="big" style={{ fontSize: 28 }}>
               Not available yet
             </p>
           )}
         </div>
-        {hidden && plan.ok && (
-          <button type="button" className="btn on-hero sm" style={{ alignSelf: 'flex-start' }} onClick={() => setHidden(false)}>
-            Reveal
-          </button>
-        )}
         <p className="sub">
           {plan.ok
             ? plan.flexibleStartOfDay <= 0

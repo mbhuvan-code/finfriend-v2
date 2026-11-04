@@ -273,6 +273,7 @@ button { cursor: pointer; }
 }
 .hero .big { font-size: 44px; font-weight: 700; line-height: 1.05; letter-spacing: -0.02em; }
 .hero .sub { font-size: 14px; color: #fff; }
+.hero-amount { display: flex; align-items: center; gap: var(--s3); min-height: 52px; }
 .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 14px; font-weight: 600; background: #fff; color: var(--color-text); }
 .status-pill.attention { color: var(--color-alert); }
 .status-pill.muted-pill { background: rgba(255, 255, 255, 0.18); color: #fff; font-weight: 500; }
