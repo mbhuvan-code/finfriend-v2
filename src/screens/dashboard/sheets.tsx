@@ -3,10 +3,9 @@ import { AlertTriangle, CheckCircle2, Clock, Eye, EyeOff, Trash2, XCircle } from
 import { checkPurchase } from '../../lib/calc'
 import { categoryLabel, suggestCategory } from '../../lib/categories'
 import { fmtDay, fmtShort } from '../../lib/dates'
-import { HIDDEN } from '../../lib/money'
+import { maskMoney, money } from '../../lib/money'
 import type { BalanceCandidate, DraftTxn } from '../../lib/parse'
 import { similarity } from '../../lib/merge'
-import { money } from '../../lib/money'
 import { uid, type Txn } from '../../lib/types'
 import { useFinance, useStore } from '../../state/store'
 import { Amount, CategorySelect, DateInput, Field, KindToggle, MoneyInput, Notice, Option, Sheet } from '../../components/ui'
@@ -18,7 +17,6 @@ import { CardFields, cardComplete } from '../onboarding/CardFields'
 import { usesCard, type CardInfo } from '../../lib/types'
 import { Breakdown } from './Breakdown'
 
-const maskMoney = (s: string, hidden: boolean) => (hidden ? s.replace(/[−-]?\$[\d,]+\.\d{2}/g, HIDDEN) : s)
 
 // ------------------------------------------------------------------ purchase checker
 
@@ -86,19 +84,20 @@ export function CheckSheet({ open, onClose }: { open: boolean; onClose: () => vo
           </div>
           <ul>
             {result.lines.map((l) => (
-              <li key={l}>{maskMoney(l, hidden)}</li>
+              // Only lines about today's amount or the daily amount hide. Week totals stay visible.
+              <li key={l}>{maskMoney(l, hidden && /for today|daily amount/i.test(l))}</li>
             ))}
           </ul>
-          {hidden && (
+          {hidden && result.lines.some((l) => /for today|daily amount/i.test(l)) && (
             <button type="button" className="link" onClick={() => setHidden(false)}>
-              <Eye size={14} strokeWidth={2} aria-hidden /> Show amounts
+              <Eye size={14} strokeWidth={2} aria-hidden /> Show today’s amount
             </button>
           )}
         </div>
       )}
       {!result && !saved && plan.ok && (
         <p className="caption">
-          Today you have <Amount value={Math.max(0, plan.leftToday)} /> to spend. Enter a price to see how it fits.
+          Today you have <Amount value={Math.max(0, plan.leftToday)} sensitive /> to spend. Enter a price to see how it fits.
         </p>
       )}
       <p className="caption">Checking a price doesn’t change your records.</p>
@@ -356,11 +355,11 @@ export function SettingsSheet({ open, onClose, onEdit }: { open: boolean; onClos
       <div className="card stack">
         <label className="check">
           <input type="checkbox" checked={hidden} onChange={(e) => setHidden(e.target.checked)} />
-          {hidden ? <EyeOff size={16} strokeWidth={2} aria-hidden /> : <Eye size={16} strokeWidth={2} aria-hidden />} Hide amounts now
+          {hidden ? <EyeOff size={16} strokeWidth={2} aria-hidden /> : <Eye size={16} strokeWidth={2} aria-hidden />} Hide today’s safe-to-spend amount
         </label>
         <label className="check">
           <input type="checkbox" checked={state.settings.hideOnOpen} onChange={(e) => update((s) => ({ ...s, settings: { ...s.settings, hideOnOpen: e.target.checked } }))} />
-          Hide amounts every time I open Finfriend
+          Hide it every time I open Finfriend
         </label>
       </div>
       <div className="card stack">
@@ -410,14 +409,8 @@ export function SettingsSheet({ open, onClose, onEdit }: { open: boolean; onClos
 
 // ------------------------------------------------------------------ import more transactions later
 
-function useHiddenMoney() {
-  const { hidden } = useStore()
-  return (n: number) => (hidden ? HIDDEN : money(n))
-}
-
 export function ImportSheet({ open, mode, onClose, onManual }: { open: boolean; mode: ImportMode; onClose: () => void; onManual: () => void }) {
   const { state, update, today } = useStore()
-  const hiddenMoney = useHiddenMoney()
   const [m, setM] = useState<ImportMode>(mode)
   const [rows, setRows] = useState<DraftTxn[] | null>(null)
   const [notes, setNotes] = useState<string[]>([])
@@ -485,7 +478,7 @@ export function ImportSheet({ open, mode, onClose, onManual }: { open: boolean; 
           )}
           {found.length > 0 && (
             <Notice>
-              This file also shows a balance of {hiddenMoney(found[0].amount)}. Your saved balance doesn’t change unless you use Update balance.
+              This file also shows a balance of {money(found[0].amount)}. Your saved balance doesn’t change unless you use Update balance.
             </Notice>
           )}
           {rows.length === 0 && <p className="caption">No transactions were found. Only a balance was visible. Use Update balance to change it.</p>}

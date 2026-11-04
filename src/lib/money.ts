@@ -16,6 +16,9 @@ export function signedMoney(n: number, kind: 'expense' | 'income'): string {
 
 export const HIDDEN = '$••••'
 
+/** Replaces dollar amounts in a sentence with dots. */
+export const maskMoney = (s: string, on: boolean) => (on ? s.replace(/[−-]?\$[\d,]+\.\d{2}/g, HIDDEN) : s)
+
 /** Parses user typed money like "1,240.50", "$30", " 12 ". Returns null when it is not a number. */
 export function parseMoneyInput(s: string): number | null {
   const cleaned = s.replace(/[$,\s]/g, '')

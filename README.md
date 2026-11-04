@@ -26,7 +26,7 @@ npm run dev
 - **Demo mode:** "See a demo with sample data" on the welcome screen loads a made-up example (`src/lib/sample.ts`, dated relative to today). A dark "Sample data" banner stays on every tab, and "Use my own info" clears it. This is the only place fictional numbers exist, and only when someone taps it.
 - **Dashboard (Option 3 order):** the spending donut first, then safe to spend today, a status (Comfortable, Tight, Needs attention, or "on hold" when info is missing), Today / Week / 2 Weeks / Month with exact dates, a category donut, spending pace, bill notes, and recent purchases.
 - **Can I afford something?** opens a sheet. Checking a price never changes records. "I bought it" records the purchase.
-- **Hide/Reveal** masks every amount on the dashboard and in the purchase checker. A setting can hide amounts every time the app opens.
+- **Hide/Reveal** hides only today's safe-to-spend amount (and the daily amount, which would give it away). Week totals, the chart, purchases, and bills stay visible. Reveal sits beside the amount so the card doesn't shift. A setting can hide it every time the app opens.
 - **Activity, Bills, Goals** tabs: filter, add, edit, and delete transactions; edit bills and mark them paid; edit savings, buffer, and income.
 - **Privacy and data:** an explanation of where data lives, plus Clear all data.
 

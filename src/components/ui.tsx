@@ -5,9 +5,13 @@ import { HIDDEN, money, parseMoneyInput, signedMoney } from '../lib/money'
 import type { Kind } from '../lib/types'
 import { useStore } from '../state/store'
 
-/** Shows an amount, or dots when the user has hidden amounts. */
-export function Amount({ value, signed, className }: { value: number; signed?: Kind; className?: string }) {
-  const { hidden } = useStore()
+/**
+ * Shows an amount. Hide only covers today's safe-to-spend amount and numbers that would give it
+ * away, so those are marked `sensitive`. Everything else stays visible.
+ */
+export function Amount({ value, signed, className, sensitive }: { value: number; signed?: Kind; className?: string; sensitive?: boolean }) {
+  const { hidden: hideOn } = useStore()
+  const hidden = hideOn && !!sensitive
   const text = hidden ? HIDDEN : signed ? signedMoney(value, signed) : money(value)
   return (
     <span className={`num ${className ?? ''}`} aria-label={hidden ? 'Amount hidden' : undefined}>

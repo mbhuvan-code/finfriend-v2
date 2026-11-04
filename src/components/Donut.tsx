@@ -12,8 +12,9 @@ export interface Slice {
 // Brand chart colors: Purple, Pink, Plum, Muted plum.
 export const CHART = { purple: '#6C4CF5', pink: '#FF7EB3', plum: '#1E1846', muted: '#68617D', track: '#E9E3FF' }
 
-export function Donut({ slices, size = 220, thickness = 34, center }: { slices: Slice[]; size?: number; thickness?: number; center: React.ReactNode }) {
-  const { hidden } = useStore()
+export function Donut({ slices, size = 220, thickness = 34, center, sensitive }: { slices: Slice[]; size?: number; thickness?: number; center: React.ReactNode; sensitive?: boolean }) {
+  const { hidden: hideOn } = useStore()
+  const hidden = hideOn && !!sensitive
   const r = (size - thickness) / 2
   const c = 2 * Math.PI * r
   const total = slices.reduce((s, x) => s + Math.max(0, x.value), 0)

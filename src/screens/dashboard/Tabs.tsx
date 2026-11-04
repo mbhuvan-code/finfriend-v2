@@ -326,7 +326,7 @@ export function Goals({ ui }: { ui: UI }) {
           </div>
         </Notice>
       )}
-      <Option checked={false} onClick={ui.openSettings} title="Privacy and data" desc="Hide amounts, update setup, or clear everything" />
+      <Option checked={false} onClick={ui.openSettings} title="Privacy and data" desc="Hide today’s amount, update setup, or clear everything" />
       <button type="button" className="btn ghost" onClick={() => ui.openActivity(null)}>
         See all transactions
       </button>

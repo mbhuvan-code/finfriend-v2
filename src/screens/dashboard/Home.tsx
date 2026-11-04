@@ -2,7 +2,7 @@ import { AlertCircle, AlertTriangle, CheckCircle2, CircleHelp, Eye, EyeOff, File
 import { PERIODS, safeToday, type CategoryTotal, type PeriodSummary } from '../../lib/calc'
 import { categoryLabel } from '../../lib/categories'
 import { diffDays, fmtDay, fmtLongHeader, fmtRange, fmtRelative, fmtShort } from '../../lib/dates'
-import { money } from '../../lib/money'
+import { maskMoney, money } from '../../lib/money'
 import type { Txn } from '../../lib/types'
 import { useFinance, useStore } from '../../state/store'
 import { Amount } from '../../components/ui'
@@ -79,12 +79,12 @@ function SpendingCard({ s, ui }: { s: PeriodSummary; ui: UI }) {
     s.remaining !== null ? (
       over ? (
         <>
-          <Amount value={-s.remaining} className="value" />
+          <Amount value={-s.remaining} className="value" sensitive={s.id === 'today'} />
           <span className="caption">over plan {noun}</span>
         </>
       ) : (
         <>
-          <Amount value={s.remaining} className="value" />
+          <Amount value={s.remaining} className="value" sensitive={s.id === 'today'} />
           <span className="caption">left {noun}</span>
         </>
       )
@@ -101,7 +101,7 @@ function SpendingCard({ s, ui }: { s: PeriodSummary; ui: UI }) {
         <h3 id="spend-h">Spending {noun}</h3>
         <span className="caption">{fmtRange(s.start, s.end)}</span>
       </div>
-      <Donut slices={slices} center={center} />
+      <Donut slices={slices} center={center} sensitive={s.id === 'today'} />
       <div className="legend">
         {s.byCategory.length === 0 && (
           <p className="caption" style={{ padding: '8px 0' }}>
@@ -137,7 +137,7 @@ function SpendingCard({ s, ui }: { s: PeriodSummary; ui: UI }) {
             <div className="legend-row">
               <span className="swatch" style={{ background: over ? 'transparent' : CHART.purple, border: over ? `2px solid ${CHART.purple}` : undefined }} aria-hidden />
               <span style={{ fontWeight: 600 }}>{over ? `Over plan ${noun}` : `Left to spend ${noun}`}</span>
-              <Amount value={Math.abs(s.remaining)} className="amt" />
+              <Amount value={Math.abs(s.remaining)} className="amt" sensitive={s.id === 'today'} />
             </div>
           </>
         )}
@@ -160,9 +160,10 @@ function SpendingCard({ s, ui }: { s: PeriodSummary; ui: UI }) {
 
 function PaceCard() {
   const { plan, summary, pace } = useFinance()
-  const { state } = useStore()
+  const { state, hidden } = useStore()
   const noun = PERIODS.find((p) => p.id === summary.id)!.noun
   const bigBills = summary.billsDueInPeriod
+  // The daily amount would reveal today's safe-to-spend, so it hides with it. Past spending stays visible.
   return (
     <section className="card stack" aria-labelledby="pace-h">
       <div className="between">
@@ -187,10 +188,10 @@ function PaceCard() {
               <span>Faster</span>
             </div>
           </div>
-          <p>{pace.headline}</p>
-          <p className="caption">{pace.detail}</p>
+          <p>{maskMoney(pace.headline, hidden && summary.id === 'today')}</p>
+          <p className="caption">{maskMoney(pace.detail, hidden)}</p>
           {pace.state === 'above' && plan.daysLeft > 1 && summary.id !== 'today' && (
-            <p className="caption">Keeping to <Amount value={plan.dailyAmount} /> a day from here keeps your bills and savings covered.</p>
+            <p className="caption">Keeping to <Amount value={plan.dailyAmount} sensitive /> a day from here keeps your bills and savings covered.</p>
           )}
         </>
       ) : (
@@ -237,7 +238,7 @@ export function Home({ ui }: { ui: UI }) {
           <h1>{greeting()}</h1>
         </div>
         <div className="row" style={{ gap: 8 }}>
-          <button type="button" className="icon-btn" onClick={() => setHidden(!hidden)} aria-label={hidden ? 'Show amounts' : 'Hide amounts'} aria-pressed={hidden}>
+          <button type="button" className="icon-btn" onClick={() => setHidden(!hidden)} aria-label={hidden ? 'Show safe-to-spend amount' : 'Hide safe-to-spend amount'} aria-pressed={hidden}>
             {hidden ? <EyeOff size={20} strokeWidth={2} aria-hidden /> : <Eye size={20} strokeWidth={2} aria-hidden />}
           </button>
           <button type="button" className="icon-btn" onClick={ui.openSettings} aria-label="Privacy and data settings">
@@ -296,7 +297,7 @@ export function Home({ ui }: { ui: UI }) {
               <CircleHelp size={16} strokeWidth={2} aria-hidden /> {status.label}
             </span>
           )}
-          <button type="button" className="icon-btn on-purple" onClick={() => setHidden(!hidden)} aria-label={hidden ? 'Show amounts' : 'Hide amounts'} aria-pressed={hidden}>
+          <button type="button" className="icon-btn on-purple" onClick={() => setHidden(!hidden)} aria-label={hidden ? 'Show safe-to-spend amount' : 'Hide safe-to-spend amount'} aria-pressed={hidden}>
             {hidden ? <EyeOff size={20} strokeWidth={2} aria-hidden /> : <Eye size={20} strokeWidth={2} aria-hidden />}
           </button>
         </div>
@@ -307,7 +308,7 @@ export function Home({ ui }: { ui: UI }) {
           {plan.ok ? (
             // Reveal sits beside the hidden amount, so nothing below shifts when amounts are hidden.
             <div className="hero-amount">
-              <Amount value={hero} className="big" />
+              <Amount value={hero} className="big" sensitive />
               {hidden && (
                 <button type="button" className="btn on-hero sm" onClick={() => setHidden(false)}>
                   Reveal
@@ -353,7 +354,7 @@ export function Home({ ui }: { ui: UI }) {
       <div className="tiles">
         <div className="tile">
           <span className="caption">{summary.remaining !== null && summary.remaining < 0 ? `Over plan ${noun}` : `Left ${noun}`}</span>
-          {summary.remaining !== null ? <Amount value={Math.abs(summary.remaining)} className="value" /> : <span className="value">Not yet</span>}
+          {summary.remaining !== null ? <Amount value={Math.abs(summary.remaining)} className="value" sensitive={summary.id === 'today'} /> : <span className="value">Not yet</span>}
           <span className="caption">
             {summary.remaining !== null ? `${summary.plannedDays} ${summary.plannedDays === 1 ? 'day' : 'days'} planned` : 'Needs your plan'}
           </span>

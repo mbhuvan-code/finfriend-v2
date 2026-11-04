@@ -8,14 +8,15 @@ import { useStore } from '../../state/store'
 export function Breakdown({ plan: p, hiddenOverride }: { plan: Plan; hiddenOverride?: boolean }) {
   const { hidden: h, state } = useStore()
   const hidden = hiddenOverride ?? h
-  const m = (n: number) => (hidden ? HIDDEN : money(n))
-  const Line = ({ label, value, total, sign }: { label: ReactNode; value: number; total?: boolean; sign?: '+' | '−' | '=' | '÷' }) => (
+  // Only the daily amount and today's safe-to-spend hide. Every input stays visible.
+  const m = (n: number, sensitive = false) => (hidden && sensitive ? HIDDEN : money(n))
+  const Line = ({ label, value, total, sign, sensitive }: { label: ReactNode; value: number; total?: boolean; sign?: '+' | '−' | '=' | '÷'; sensitive?: boolean }) => (
     <div className={`line ${total ? 'total' : ''}`}>
       <span>
         {sign && sign !== '=' ? `${sign} ` : ''}
         {label}
       </span>
-      <span className="num">{m(value)}</span>
+      <span className="num">{m(value, sensitive)}</span>
     </div>
   )
   if (!p.ok) {
@@ -43,16 +44,16 @@ export function Breakdown({ plan: p, hiddenOverride }: { plan: Plan; hiddenOverr
           <span>
             ÷ {p.daysLeft} {p.daysLeft === 1 ? 'day' : 'days'} ({fmtRange(p.today, p.horizonEnd!)})
           </span>
-          <span className="num">{m(p.dailyAmount)} a day</span>
+          <span className="num">{m(p.dailyAmount, true)} a day</span>
         </div>
         {p.spentToday > 0 && <Line sign="−" label="Spent today" value={p.spentToday} />}
-        <Line total label="Safe to spend today" value={Math.max(0, p.leftToday)} />
+        <Line total label="Safe to spend today" value={Math.max(0, p.leftToday)} sensitive />
       </div>
       <p className="caption">Expected income is never counted until it arrives and you add it.</p>
       {p.usesCard && <p className="caption">Your credit limit is never counted as money you have.</p>}
       {p.cardRemaining > 0 && (
         <p className="caption">
-          The other {m(p.cardRemaining)} you owe on your card stays as debt. It isn’t counted as spending money.
+          The other {money(p.cardRemaining)} you owe on your card stays as debt. It isn’t counted as spending money.
         </p>
       )}
       {p.billsUnknownAmount.length > 0 && (
