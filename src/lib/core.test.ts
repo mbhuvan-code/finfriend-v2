@@ -324,3 +324,19 @@ test('deposit schedule: monthly clamps to month end, irregular gives nothing', (
   assert.equal(guessSchedule([{ description: 'Tips', date: '2026-10-01', amount: 50 }, { description: 'Tips', date: '2026-10-20', amount: 70 }], TODAY), null)
   assert.equal(guessSchedule([{ description: 'Payroll', date: '2026-10-30', amount: 400 }], TODAY), null)
 })
+
+import { sampleState } from './sample.ts'
+
+test('sample data is flagged, complete, and reconciles', () => {
+  const s = sampleState(TODAY)
+  assert.equal(s.demo, true)
+  assert.ok(s.txns.every((t) => t.source === 'sample'))
+  const p = computePlan(s, TODAY)
+  assert.equal(p.ok, true)
+  // 742.50 - (350 rent + 45 phone) - 85.40 card - 60 savings - 50 buffer
+  assert.equal(p.flexible, 152.1)
+  assert.equal(p.billsLater.length, 1) // Spotify is due after the next paycheck
+  const w = summarizePeriod(s, p, 'week')
+  assert.ok(w.remaining! > 0)
+  assert.equal(emptyState().demo, undefined)
+})

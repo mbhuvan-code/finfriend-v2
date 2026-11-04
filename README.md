@@ -23,7 +23,8 @@ npm run dev
 
 - **Onboarding (8 steps):** Welcome, how money comes in (schedule and next date), how much comes in (typed or found in a deposits screenshot, with a suggested schedule the user can tap), bank balance plus pending spending, upcoming bills, debit or credit (card details for credit users) plus transactions, savings and buffer, then a review. Each step has its own upload option. Rows found in any onboarding upload carry forward to the transactions step. Back works on every step, and answers persist if the page reloads.
 - **Ways in:** screenshots (PNG, JPG, HEIC) on the income, balance, and transactions steps; a screen recording (MP4, MOV, WEBM) or CSV on the transactions step; or typing everything in.
-- **Dashboard:** safe to spend today, a status (Comfortable, Tight, Needs attention, or "on hold" when info is missing), Today / Week / 2 Weeks / Month with exact dates, a category donut, spending pace, bill notes, and recent purchases.
+- **Demo mode:** "See a demo with sample data" on the welcome screen loads a made-up example (`src/lib/sample.ts`, dated relative to today). A dark "Sample data" banner stays on every tab, and "Use my own info" clears it. This is the only place fictional numbers exist, and only when someone taps it.
+- **Dashboard (Option 3 order):** the spending donut first, then safe to spend today, a status (Comfortable, Tight, Needs attention, or "on hold" when info is missing), Today / Week / 2 Weeks / Month with exact dates, a category donut, spending pace, bill notes, and recent purchases.
 - **Can I afford something?** opens a sheet. Checking a price never changes records. "I bought it" records the purchase.
 - **Hide/Reveal** masks every amount on the dashboard and in the purchase checker. A setting can hide amounts every time the app opens.
 - **Activity, Bills, Goals** tabs: filter, add, edit, and delete transactions; edit bills and mark them paid; edit savings, buffer, and income.

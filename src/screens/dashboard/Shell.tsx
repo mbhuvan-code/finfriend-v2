@@ -22,7 +22,7 @@ export interface UI {
 }
 
 export function Shell() {
-  const { update } = useStore()
+  const { state, update, clearAll } = useStore()
   const [tab, setTab] = useState<Tab>('home')
   const [filter, setFilter] = useState<string | null>(null)
   const [sheet, setSheet] = useState<null | 'check' | 'txn' | 'settings' | 'import' | 'balance' | 'income' | 'calc'>(null)
@@ -71,6 +71,23 @@ export function Shell() {
 
   return (
     <>
+      {state.demo && (
+        <div className="demo-banner" role="status">
+          <span>
+            <strong>Sample data.</strong> These numbers are made up for a demo.
+          </span>
+          <button
+            type="button"
+            className="btn sm on-demo"
+            onClick={() => {
+              clearAll()
+              scrollToTop()
+            }}
+          >
+            Use my own info
+          </button>
+        </div>
+      )}
       {tab === 'home' && <Home ui={ui} />}
       {tab === 'activity' && <Activity ui={ui} filter={filter} setFilter={setFilter} />}
       {tab === 'bills' && <Bills ui={ui} />}

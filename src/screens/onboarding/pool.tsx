@@ -21,7 +21,7 @@ export function txnToDraft(t: Txn): DraftTxn {
     include: true,
     pending: false,
     conf: 100,
-    origin: t.source === 'manual' ? 'Added by you' : t.source === 'csv' ? 'CSV' : t.source === 'recording' ? 'Recording' : 'Screenshot',
+    origin: t.source === 'sample' ? 'Sample data' : t.source === 'manual' ? 'Added by you' : t.source === 'csv' ? 'CSV' : t.source === 'recording' ? 'Recording' : 'Screenshot',
     dateExplicit: true,
     source: t.source,
   }

@@ -54,6 +54,7 @@ export function Onboarding() {
 // ------------------------------------------------------------------ 1. Welcome
 
 function Welcome({ next }: { next: () => void }) {
+  const { loadSample } = useStore()
   return (
     <>
       {/* Drop the official gradient "f" logo here. A replacement mark is intentionally not drawn. */}
@@ -86,7 +87,15 @@ function Welcome({ next }: { next: () => void }) {
         No bank login needed. You choose what to share, and rough numbers work fine.
       </Notice>
       </div>
-      <Footer label="Get started" onClick={next} />
+      <Footer
+        label="Get started"
+        onClick={next}
+        secondary={
+          <button type="button" className="btn ghost" onClick={() => { loadSample(); scrollToTop() }}>
+            See a demo with sample data
+          </button>
+        }
+      />
     </>
   )
 }

@@ -1,7 +1,7 @@
 import type { ISODate } from './dates'
 
 export type Kind = 'expense' | 'income'
-export type Source = 'screenshot' | 'recording' | 'csv' | 'manual' | 'checker'
+export type Source = 'screenshot' | 'recording' | 'csv' | 'manual' | 'checker' | 'sample'
 
 /** A confirmed transaction. Only transactions the user confirmed are ever stored. */
 export interface Txn {
@@ -57,6 +57,8 @@ export interface CardInfo {
 
 export interface FinState {
   version: 2
+  /** true while the app shows the built-in sample data for demos. Always labeled on screen. */
+  demo?: boolean
   payMethod: PayMethod | null
   card: CardInfo
   onboarding: { complete: boolean; step: number; method: 'screenshot' | 'recording' | 'manual' | null }

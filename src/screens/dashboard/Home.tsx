@@ -271,6 +271,19 @@ export function Home({ ui }: { ui: UI }) {
         </div>
       )}
 
+      <div className="stack-sm">
+        <div className="seg" role="group" aria-label="Spending period">
+          {PERIODS.map((p) => (
+            <button key={p.id} type="button" aria-pressed={period === p.id} onClick={() => setPeriod(p.id)}>
+              {p.label}
+            </button>
+          ))}
+        </div>
+        <p className="caption center">{fmtRange(summary.start, summary.end)}</p>
+      </div>
+
+      <SpendingCard s={summary} ui={ui} />
+
       <section className="hero" aria-labelledby="sts-label">
         <div className="between">
           {status.level ? (
@@ -334,7 +347,6 @@ export function Home({ ui }: { ui: UI }) {
         )}
       </section>
 
-
       <div className="tiles">
         <div className="tile">
           <span className="caption">{summary.remaining !== null && summary.remaining < 0 ? `Over plan ${noun}` : `Left ${noun}`}</span>
@@ -358,18 +370,6 @@ export function Home({ ui }: { ui: UI }) {
         </button>
       </div>
 
-      <div className="stack-sm">
-        <div className="seg" role="group" aria-label="Spending period">
-          {PERIODS.map((p) => (
-            <button key={p.id} type="button" aria-pressed={period === p.id} onClick={() => setPeriod(p.id)}>
-              {p.label}
-            </button>
-          ))}
-        </div>
-        <p className="caption center">{fmtRange(summary.start, summary.end)}</p>
-      </div>
-
-      <SpendingCard s={summary} ui={ui} />
       <PaceCard />
 
       <section className="stack-sm" aria-labelledby="recent-h">

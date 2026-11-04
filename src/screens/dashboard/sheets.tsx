@@ -167,7 +167,7 @@ export function TxnSheet({ open, txnId, onClose }: { open: boolean; txnId: strin
           </div>
           <div className="summary-row">
             <span className="caption">Added from</span>
-            <span>{{ screenshot: 'Screenshot', recording: 'Screen recording', csv: 'CSV file', manual: 'Typed by you', checker: 'Purchase checker' }[existing.source]}</span>
+            <span>{{ screenshot: 'Screenshot', recording: 'Screen recording', csv: 'CSV file', manual: 'Typed by you', checker: 'Purchase checker', sample: 'Sample data for demos' }[existing.source]}</span>
           </div>
         </div>
         <button type="button" className="btn primary block" onClick={() => setEditing(true)}>

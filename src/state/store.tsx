@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { computePace, computePlan, computeStatus, summarizePeriod, type PeriodId } from '../lib/calc'
 import { todayISO } from '../lib/dates'
 import { emptyState, type FinState } from '../lib/types'
+import { sampleState } from '../lib/sample'
 
 const KEY = 'finfriend.v2'
 
@@ -26,6 +27,8 @@ interface Store {
   state: FinState
   update: (fn: (s: FinState) => FinState) => void
   clearAll: () => void
+  /** Replaces everything with clearly labeled sample data, for demos. */
+  loadSample: () => void
   today: string
   hidden: boolean
   setHidden: (h: boolean) => void
@@ -67,14 +70,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setState(emptyState())
     setPeriod('week')
   }, [])
+  const loadSample = useCallback(() => {
+    setState(sampleState(todayISO()))
+    setPeriod('week')
+  }, [])
   const setHidden = useCallback(
     (h: boolean) => setState((s) => ({ ...s, settings: { ...s.settings, hideAmounts: h } })),
     [],
   )
 
   const value = useMemo(
-    () => ({ state, update, clearAll, today, hidden: state.settings.hideAmounts, setHidden, period, setPeriod, saveError }),
-    [state, update, clearAll, today, setHidden, period, saveError],
+    () => ({ state, update, clearAll, loadSample, today, hidden: state.settings.hideAmounts, setHidden, period, setPeriod, saveError }),
+    [state, update, clearAll, loadSample, today, setHidden, period, saveError],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
