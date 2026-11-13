@@ -1,5 +1,5 @@
 import { scrollToTop } from '../../lib/scroll'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { CalendarClock, PiggyBank, ShieldCheck, ShoppingBag, Trash2, Wallet } from 'lucide-react'
 import { computePlan, horizon, missingEssentials } from '../../lib/calc'
 import { addDays, endOfMonth, fmtDay, fmtRange, fmtShort } from '../../lib/dates'
@@ -15,6 +15,10 @@ import { Breakdown } from '../dashboard/Breakdown'
 const TOTAL = 8
 
 import { Footer } from './Footer'
+import { analyticsAvailable, track } from '../../lib/analytics'
+
+const STEP_NAMES = ['welcome', 'income_schedule', 'income_amount', 'balance', 'bills', 'pay_and_transactions', 'savings', 'review']
+const ONBOARDING_START = 'ff.onboarding.start'
 
 export function Onboarding() {
   const { state, update } = useStore()
@@ -23,6 +27,10 @@ export function Onboarding() {
     update((s) => ({ ...s, onboarding: { ...s.onboarding, step: n } }))
     scrollToTop()
   }
+  // One event per step shown, so the study can see where people stop.
+  useEffect(() => {
+    track('onboarding_step_viewed', { step: step + 1, step_name: STEP_NAMES[step] ?? 'unknown' })
+  }, [step])
 
   return (
     <PoolProvider initial={state.txns}>
@@ -85,11 +93,20 @@ function Welcome({ next }: { next: () => void }) {
       </div>
       <Notice icon={<ShieldCheck size={20} strokeWidth={2} aria-hidden />}>
         No bank login needed. You choose what to share, and rough numbers work fine.
+        {analyticsAvailable && ' For this study, Finfriend counts which screens you use. It never sends your amounts, and you can turn this off in Privacy.'}
       </Notice>
       </div>
       <Footer
         label="Get started"
-        onClick={next}
+        onClick={() => {
+          try {
+            sessionStorage.setItem(ONBOARDING_START, String(Date.now()))
+          } catch {
+            /* timing is optional */
+          }
+          track('onboarding_started')
+          next()
+        }}
         secondary={
           <button type="button" className="btn ghost" onClick={() => { loadSample(); scrollToTop() }}>
             See a demo with sample data
@@ -246,6 +263,10 @@ function IncomeAmount({ next }: { next: () => void }) {
   const guess = guessSchedule(deposits, today)
   const inc = state.income
   const guessApplied = guess && inc.pattern === guess.pattern && inc.nextDate === guess.nextDate
+  const guessPattern = guess?.pattern ?? null
+  useEffect(() => {
+    if (guessPattern) track('deposit_schedule_suggested', { pattern: guessPattern })
+  }, [guessPattern])
   return (
     <>
       <div className="stack-sm">
@@ -283,7 +304,10 @@ function IncomeAmount({ next }: { next: () => void }) {
                   <button
                     type="button"
                     className="btn soft sm"
-                    onClick={() => update((s) => ({ ...s, income: { ...s.income, pattern: guess.pattern, nextDate: guess.nextDate, dateSure: false, planUntil: null } }))}
+                    onClick={() => {
+                      update((s) => ({ ...s, income: { ...s.income, pattern: guess.pattern, nextDate: guess.nextDate, dateSure: false, planUntil: null } }))
+                      track('deposit_schedule_applied', { pattern: guess.pattern })
+                    }}
                   >
                     Use this schedule
                   </button>
@@ -506,6 +530,30 @@ function Summary({ go }: { go: (n: number) => void }) {
   const earliest = txns.length ? txns.reduce((m, t) => (t.date < m ? t.date : m), txns[0].date) : null
   const latest = txns.length ? txns.reduce((m, t) => (t.date > m ? t.date : m), txns[0].date) : null
   const finish = () => {
+    let seconds: number | null = null
+    try {
+      const t = Number(sessionStorage.getItem(ONBOARDING_START))
+      if (t) seconds = Math.round((Date.now() - t) / 1000)
+    } catch {
+      /* timing is optional */
+    }
+    // Yes/no flags and counts only, never the amounts themselves.
+    track('onboarding_completed', {
+      seconds_taken: seconds,
+      pay_method: state.payMethod ?? 'none',
+      income_pattern: state.income.pattern ?? 'none',
+      has_balance: state.balance.amount !== null,
+      balance_from_upload: state.balance.source === 'screenshot' || state.balance.source === 'recording',
+      has_income_date: !!state.income.nextDate,
+      uses_plan_until: !state.income.nextDate && !!state.income.planUntil,
+      bills_count: state.bills.length,
+      bills_unknown_amount: unknown.length,
+      transactions_count: txns.length,
+      savings_set: !state.savings.skipped && !!state.savings.protect,
+      buffer_set: !state.buffer.skipped && !!state.buffer.amount,
+      missing_count: missing.length,
+      estimate_ready: plan.ok,
+    })
     update((s) => ({ ...s, onboarding: { ...s.onboarding, complete: true } }))
     scrollToTop()
   }

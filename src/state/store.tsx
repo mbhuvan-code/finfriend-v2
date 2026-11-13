@@ -1,11 +1,12 @@
 // One financial data model for every screen. Confirmed data is saved in this browser's
 // localStorage (not encrypted). Raw screenshots and videos are never saved.
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { computePace, computePlan, computeStatus, summarizePeriod, type PeriodId } from '../lib/calc'
 import { todayISO } from '../lib/dates'
 import { emptyState, type FinState } from '../lib/types'
 import { sampleState } from '../lib/sample'
+import { setDemoMode, setOptOut, startAnalytics, track } from '../lib/analytics'
 
 const KEY = 'finfriend.v2'
 
@@ -54,6 +55,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [state])
 
+  // Anonymous usage analytics (see lib/analytics.ts). Starts once, honors the opt-out setting.
+  const optedOut = !!state.settings.analyticsOff
+  const firstOptRun = useRef(true)
+  useEffect(() => {
+    startAnalytics(optedOut)
+    if (firstOptRun.current) firstOptRun.current = false
+    else setOptOut(optedOut)
+  }, [optedOut])
+  useEffect(() => setDemoMode(!!state.demo), [state.demo])
+
   // Keep "today" right if the app stays open past midnight.
   useEffect(() => {
     const t = setInterval(() => setToday(todayISO()), 60_000)
@@ -67,15 +78,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     } catch {
       /* storage unavailable: nothing saved to clear */
     }
-    setState(emptyState())
+    track('data_cleared')
+    // Keep the analytics choice: clearing data shouldn't turn analytics back on.
+    setState((s) => ({ ...emptyState(), settings: { ...emptyState().settings, analyticsOff: s.settings.analyticsOff } }))
     setPeriod('week')
   }, [])
   const loadSample = useCallback(() => {
-    setState(sampleState(todayISO()))
+    setState((s) => ({ ...sampleState(todayISO()), settings: { ...sampleState(todayISO()).settings, analyticsOff: s.settings.analyticsOff } }))
     setPeriod('week')
+    track('demo_started')
   }, [])
   const setHidden = useCallback(
-    (h: boolean) => setState((s) => ({ ...s, settings: { ...s.settings, hideAmounts: h } })),
+    (h: boolean) => {
+      track('hide_toggled', { hidden: h })
+      setState((s) => ({ ...s, settings: { ...s.settings, hideAmounts: h } }))
+    },
     [],
   )
 

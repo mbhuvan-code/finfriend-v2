@@ -71,7 +71,7 @@ export interface FinState {
   savings: { goalName: string; goalTarget: number | null; protect: number | null; skipped: boolean }
   buffer: { amount: number | null; skipped: boolean }
   txns: Txn[]
-  settings: { hideAmounts: boolean; hideOnOpen: boolean }
+  settings: { hideAmounts: boolean; hideOnOpen: boolean; analyticsOff?: boolean }
 }
 
 export const usesCard = (s: Pick<FinState, 'payMethod'>) => s.payMethod === 'credit' || s.payMethod === 'both'

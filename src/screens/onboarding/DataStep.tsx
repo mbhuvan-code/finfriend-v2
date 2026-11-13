@@ -9,6 +9,7 @@ import { BalanceReview, invalidIncluded, RowsReview } from '../import/Review'
 import { CardFields } from './CardFields'
 import { Footer } from './Footer'
 import { draftToTxn, usePool } from './pool'
+import { track } from '../../lib/analytics'
 
 export { draftToTxn, txnToDraft } from './pool'
 
@@ -140,6 +141,14 @@ export function PayTxnStep({ next }: { next: () => void }) {
 
   function save() {
     if (bad.length > 0) return setShowErrors(true)
+    const kept = rows.filter((r) => r.include)
+    track('transactions_confirmed', {
+      rows_total: rows.length,
+      rows_included: kept.length,
+      rows_from_upload: kept.filter((r) => r.source && r.source !== 'manual').length,
+      rows_flagged_but_included: kept.filter((r) => r.flags.length > 0).length,
+      pay_method: pm ?? 'none',
+    })
     const asOf = state.balance.amount === null ? null : state.balance.asOf
     update((s) => ({
       ...s,

@@ -61,8 +61,10 @@ pace            = average daily spending over completed days in the period vs. t
 ## Privacy, stated accurately
 
 - Confirmed data is stored in this browser's `localStorage` (key `finfriend.v2`). It is **not encrypted**.
-- Screenshots and recordings are processed in memory and never saved.
+- Screenshots and recordings are processed in memory and never saved or uploaded.
 - There is no bank connection and no login, and the app never asks for credentials.
+- **Usage analytics (PostHog):** when `VITE_POSTHOG_KEY` is set at build time, the app sends anonymous, named events from `src/lib/analytics.ts`, such as onboarding steps viewed, import method and row counts, period switches, Hide toggles, and purchase-check timing. Events never include amounts, balances, merchant names, or descriptions, and a final filter drops any value that looks like a dollar amount. Session replay, autocapture, heatmaps, and surveys are off. The welcome screen discloses this, and Privacy and data has a switch to turn it off. Sample-data demos are tagged `demo_mode: true` so they can be filtered out of results.
+- To turn analytics on for the live site, set the repository variables `VITE_POSTHOG_KEY` (and optionally `VITE_POSTHOG_HOST`, default `https://us.i.posthog.com`) and push.
 
 ## Known limits
 

@@ -1,3 +1,4 @@
+import { track } from '../../lib/analytics'
 import { scrollToTop } from '../../lib/scroll'
 import { useCallback, useMemo, useState } from 'react'
 import { Activity as ActivityIcon, Home as HomeIcon, Plus, Receipt, Target } from 'lucide-react'
@@ -32,13 +33,17 @@ export function Shell() {
   const close = useCallback(() => setSheet(null), [])
 
   const go = (t: Tab) => {
+    track('tab_viewed', { tab: t })
     setTab(t)
     scrollToTop()
   }
 
   const ui: UI = useMemo(
     () => ({
-      openCheck: () => setSheet('check'),
+      openCheck: () => {
+        track('purchase_check_opened')
+        setSheet('check')
+      },
       openTxn: (id) => {
         setTxnId(id)
         setTxnKey((k) => k + 1)
@@ -51,7 +56,10 @@ export function Shell() {
       },
       openBalance: () => setSheet('balance'),
       openIncome: () => setSheet('income'),
-      openCalc: () => setSheet('calc'),
+      openCalc: () => {
+        track('calc_explainer_opened')
+        setSheet('calc')
+      },
       openCard: () => setSheet('balance'),
       openActivity: (f) => {
         setFilter(f)
@@ -80,6 +88,7 @@ export function Shell() {
             type="button"
             className="btn sm on-demo"
             onClick={() => {
+              track('demo_exited')
               clearAll()
               scrollToTop()
             }}

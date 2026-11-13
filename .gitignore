@@ -4,3 +4,4 @@ public/ocr
 *.local
 .DS_Store
 tsconfig.tsbuildinfo
+.env

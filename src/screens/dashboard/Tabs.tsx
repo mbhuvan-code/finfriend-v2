@@ -1,3 +1,4 @@
+import { track } from '../../lib/analytics'
 import { useState } from 'react'
 import { AlertCircle, CheckCircle2, CreditCard, FileUp, Plus } from 'lucide-react'
 import { computePlan } from '../../lib/calc'
@@ -127,6 +128,7 @@ export function Bills({ ui }: { ui: UI }) {
   const until = plan.horizonEnd ? (plan.horizonSource === 'income' ? `before ${fmtShort(plan.incomeDate!)}` : `by ${fmtShort(plan.horizonEnd)}`) : 'before your next income'
 
   function markPaid(b: Bill, addTxn: boolean) {
+    track('bill_marked_paid', { added_payment: addTxn })
     update((s) => ({
       ...s,
       bills: s.bills.map((x) => (x.id === b.id ? { ...x, paid: true } : x)),

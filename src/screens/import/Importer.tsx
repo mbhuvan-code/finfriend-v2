@@ -1,3 +1,4 @@
+import { track } from '../../lib/analytics'
 import { useRef, useState } from 'react'
 import { FileSpreadsheet, Film, ImageIcon, Keyboard, ShieldCheck, Upload } from 'lucide-react'
 import { csvToDrafts, guessMapping, looksLikeHeader, parseCSV, type CsvMapping } from '../../lib/csv'
@@ -56,15 +57,30 @@ export function Importer({ mode, today, onDone, onSwitch }: { mode: ImportMode; 
   const [drag, setDrag] = useState(false)
   const [csv, setCsv] = useState<{ header: string[]; body: string[][]; mapping: CsvMapping; name: string } | null>(null)
 
+  const t0 = useRef(0)
   const fail = (title: string, body: string) => {
+    track('import_failed', { mode, reason: title })
     setError({ title, body })
     setPhase('error')
+  }
+  /** Reports counts only. Never names, amounts, or dates. */
+  const done = (r: ImportResult) => {
+    track('import_finished', {
+      mode,
+      rows_found: r.rows.length,
+      rows_flagged: r.rows.filter((x) => x.flags.length > 0).length,
+      balance_found: r.balances.length > 0,
+      seconds: Math.round((performance.now() - t0.current) / 1000),
+    })
+    onDone(r)
   }
 
   async function handleFiles(files: File[]) {
     if (files.length === 0) return
     cancelled.current = false
     setError(null)
+    t0.current = performance.now()
+    track('import_started', { mode, file_count: files.length })
     if (mode === 'csv') return handleCsv(files[0])
     setPhase('working')
     try {
@@ -72,6 +88,7 @@ export function Importer({ mode, today, onDone, onSwitch }: { mode: ImportMode; 
       else await handleVideo(files[0])
     } catch (e) {
       if ((e as Error).name === 'AbortError') {
+        track('import_cancelled', { mode })
         setPhase('pick')
         return
       }
@@ -126,7 +143,7 @@ export function Importer({ mode, today, onDone, onSwitch }: { mode: ImportMode; 
     if (rows.length === 0) notes.push("Finfriend found a balance but no transactions. That's enough to start. Spending pace appears once you add purchases.")
     if (rows.length > 0 && minus === 0 && plus === 0)
       warnings.push('No + or − signs were visible, so rows are marked as spending unless the name suggests income. Check any money you received.')
-    onDone({ rows, balances, notes, warnings })
+    done({ rows, balances, notes, warnings })
   }
 
   async function handleVideo(file: File) {
@@ -165,7 +182,7 @@ export function Importer({ mode, today, onDone, onSwitch }: { mode: ImportMode; 
       )
     if (r.rows.length > 0 && r.signsSeen.minus === 0 && r.signsSeen.plus === 0)
       warnings.push('No + or − signs were visible, so rows are marked as spending unless the name suggests income. Check any money you received.')
-    onDone({ rows: r.rows, balances: r.balances, notes, warnings })
+    done({ rows: r.rows, balances: r.balances, notes, warnings })
   }
 
   async function handleCsv(file: File) {
@@ -186,7 +203,7 @@ export function Importer({ mode, today, onDone, onSwitch }: { mode: ImportMode; 
     if (drafts.length === 0) return fail('No transactions found with those columns', 'Check the column choices and try again.')
     const notes = [`Read ${drafts.length} rows from ${csv.name}.`]
     if (skipped > 0) notes.push(`${skipped} ${skipped === 1 ? 'row had' : 'rows had'} no readable amount and ${skipped === 1 ? 'was' : 'were'} skipped.`)
-    onDone({ rows: drafts, balances: [], notes, warnings: [] })
+    done({ rows: drafts, balances: [], notes, warnings: [] })
   }
 
   const Icon = mode === 'screenshot' ? ImageIcon : mode === 'recording' ? Film : FileSpreadsheet

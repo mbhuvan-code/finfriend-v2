@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { analyticsAvailable, track } from '../../lib/analytics'
 import { AlertTriangle, CheckCircle2, Clock, Eye, EyeOff, Trash2, XCircle } from 'lucide-react'
 import { checkPurchase } from '../../lib/calc'
 import { categoryLabel, suggestCategory } from '../../lib/categories'
@@ -26,13 +27,37 @@ export function CheckSheet({ open, onClose }: { open: boolean; onClose: () => vo
   const [what, setWhat] = useState('')
   const [price, setPrice] = useState<number | null>(null)
   const [saved, setSaved] = useState<string | null>(null)
+  // Research question 7: how fast can someone decide? Times only, never the price.
+  const openedAt = useRef(0)
+  const firstAnswer = useRef<number | null>(null)
+  const recorded = useRef(false)
+  const lastVerdict = useRef<string>('none')
+  useEffect(() => {
+    if (open) {
+      openedAt.current = performance.now()
+      firstAnswer.current = null
+      recorded.current = false
+      lastVerdict.current = 'none'
+    }
+  }, [open])
+  const result = price !== null && price > 0 ? checkPurchase(plan, week, price) : null
+  if (result) {
+    lastVerdict.current = result.verdict
+    if (firstAnswer.current === null && openedAt.current) firstAnswer.current = performance.now()
+  }
   const close = () => {
+    track('purchase_check_closed', {
+      checked: firstAnswer.current !== null,
+      last_verdict: lastVerdict.current,
+      seconds_to_first_answer: firstAnswer.current === null ? null : Math.round((firstAnswer.current - openedAt.current) / 100) / 10,
+      seconds_open: Math.round((performance.now() - openedAt.current) / 1000),
+      recorded: recorded.current,
+    })
     setWhat('')
     setPrice(null)
     setSaved(null)
     onClose()
   }
-  const result = price !== null && price > 0 ? checkPurchase(plan, week, price) : null
   const tone = !result ? '' : result.verdict === 'fitsToday' ? 'good' : result.verdict === 'fitsLater' ? 'warn' : 'bad'
   const Icon = !result
     ? null
@@ -58,6 +83,8 @@ export function CheckSheet({ open, onClose }: { open: boolean; onClose: () => vo
       inBalance: false,
     }
     update((s) => ({ ...s, txns: [t, ...s.txns] }))
+    recorded.current = true
+    track('purchase_recorded', { verdict: result?.verdict ?? 'none' })
     setSaved(desc)
     setPrice(null)
     setWhat('')
@@ -136,6 +163,7 @@ export function TxnSheet({ open, txnId, onClose }: { open: boolean; txnId: strin
       return
     }
     const t = { ...draft, description: draft.description.trim(), amount: amount! }
+    track(isNew ? 'transaction_added' : 'transaction_edited', { kind: t.kind, category: t.category, source: t.source })
     update((s) => ({ ...s, txns: isNew ? [t, ...s.txns] : s.txns.map((x) => (x.id === t.id ? t : x)) }))
     onClose()
   }
@@ -228,6 +256,7 @@ export function TxnSheet({ open, txnId, onClose }: { open: boolean; txnId: strin
                 type="button"
                 className="btn danger"
                 onClick={() => {
+                  track('transaction_deleted', { source: draft.source })
                   update((s) => ({ ...s, txns: s.txns.filter((t) => t.id !== draft.id) }))
                   onClose()
                 }}
@@ -258,6 +287,7 @@ export function BalanceSheet({ open, onClose }: { open: boolean; onClose: () => 
   const [pendingAmt, setPendingAmt] = useState<number | null>(null)
   function save() {
     if (amount === null || (card && !cardComplete(cardInfo))) return setShowErrors(true)
+    track('balance_updated', { uses_card: card, pending_reported: pending === 'notIncluded' })
     update((s) => ({
       ...s,
       balance: { amount, asOf: today, source: 'manual' },
@@ -348,10 +378,28 @@ export function SettingsSheet({ open, onClose, onEdit }: { open: boolean; onClos
         <h3>Where your info lives</h3>
         <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 6, fontSize: 14 }}>
           <li>Your confirmed numbers are saved in this browser’s storage on this device. They are not encrypted.</li>
-          <li>Nothing is sent to a server. Finfriend has no bank connection.</li>
-          <li>Screenshots and recordings are read on this device, then discarded. They are never saved.</li>
+          <li>Your amounts, balances, and transactions never leave this device. Finfriend has no bank connection.</li>
+          <li>Screenshots and recordings are read on this device, then discarded. They are never saved or uploaded.</li>
+          {analyticsAvailable && (
+            <li>
+              For this study, Finfriend sends anonymous usage events to PostHog, like which screens you open and which buttons you tap. They never include amounts, names, or merchants, and your screen is never recorded.
+            </li>
+          )}
         </ul>
       </div>
+      {analyticsAvailable && (
+        <div className="card stack">
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={!state.settings.analyticsOff}
+              onChange={(e) => update((s) => ({ ...s, settings: { ...s.settings, analyticsOff: !e.target.checked } }))}
+            />
+            Share anonymous usage events
+          </label>
+          <p className="caption">Turn this off and Finfriend stops sending anything. The app works the same either way.</p>
+        </div>
+      )}
       <div className="card stack">
         <label className="check">
           <input type="checkbox" checked={hidden} onChange={(e) => setHidden(e.target.checked)} />

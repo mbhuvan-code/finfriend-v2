@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+import { track } from '../../lib/analytics'
 import { AlertCircle, AlertTriangle, CheckCircle2, CircleHelp, Eye, EyeOff, FileUp, Plus, Settings, ShoppingBag } from 'lucide-react'
 import { PERIODS, safeToday, type CategoryTotal, type PeriodSummary } from '../../lib/calc'
 import { categoryLabel } from '../../lib/categories'
@@ -230,6 +232,11 @@ export function Home({ ui }: { ui: UI }) {
   const recent = sortTxns(state.txns).slice(0, 5)
   const noun = PERIODS.find((p) => p.id === period)!.noun
   const incomePast = plan.missing.includes('horizonPast')
+  // Status level and yes/no flags only. No amounts.
+  useEffect(() => {
+    track('dashboard_viewed', { status_level: status.level ?? 'none', estimate_ready: plan.ok, transactions_count: state.txns.length })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const hero = safeToday(plan)
 
   return (
@@ -277,7 +284,10 @@ export function Home({ ui }: { ui: UI }) {
       <div className="stack-sm">
         <div className="seg" role="group" aria-label="Spending period">
           {PERIODS.map((p) => (
-            <button key={p.id} type="button" aria-pressed={period === p.id} onClick={() => setPeriod(p.id)}>
+            <button key={p.id} type="button" aria-pressed={period === p.id} onClick={() => {
+                track('period_selected', { period: p.id })
+                setPeriod(p.id)
+              }}>
               {p.label}
             </button>
           ))}
