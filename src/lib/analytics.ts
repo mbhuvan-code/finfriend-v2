@@ -15,6 +15,8 @@ const HOST = (import.meta.env.VITE_POSTHOG_HOST as string | undefined) || 'https
 
 export const analyticsAvailable = Boolean(KEY)
 let started = false
+// Events sent before startAnalytics runs wait here instead of being dropped.
+const queue: [AnalyticsEvent, Props | undefined][] = []
 
 type Prop = string | number | boolean | null
 export type Props = Record<string, Prop>
@@ -89,11 +91,33 @@ export function startAnalytics(optedOut: boolean) {
       return event
     },
   })
-  posthog.register({ app: 'finfriend-v2' })
+  posthog.register({ app: 'finfriend-v2', demo_mode: savedDemo() })
+  for (const [event, props] of queue.splice(0)) track(event, props)
+}
+
+function savedDemo(): boolean {
+  try {
+    return !!JSON.parse(localStorage.getItem('finfriend.v2') || '{}')?.demo
+  } catch {
+    return false
+  }
+}
+
+/** Reads the saved opt-out choice, so analytics can start before the app first renders. */
+export function savedOptOut(): boolean {
+  try {
+    return !!JSON.parse(localStorage.getItem('finfriend.v2') || '{}')?.settings?.analyticsOff
+  } catch {
+    return false
+  }
 }
 
 export function track(event: AnalyticsEvent, props?: Props) {
-  if (!started) return
+  if (!KEY) return
+  if (!started) {
+    if (queue.length < 50) queue.push([event, props])
+    return
+  }
   try {
     posthog.capture(event, clean(props))
   } catch {
